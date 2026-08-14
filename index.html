@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Streamrun Time + Weather</title>
+
+<style>
+  /* ===== EASY DESIGN SETTINGS ===== */
+  :root {
+    --text: #ffffff;
+    --shadow: 0 2px 5px rgba(0,0,0,.85);
+    --font: Arial, Helvetica, sans-serif;
+
+    /* Change these to customise the backing */
+    --backing: rgba(0, 0, 0, 0.68);
+    --corner-radius: 7px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    overflow: hidden;
+    font-family: var(--font);
+    color: var(--text);
+  }
+
+  .overlay {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 11px;
+    white-space: nowrap;
+
+    /* ===== BACKING / READABILITY ===== */
+    background: var(--backing);
+    border-radius: var(--corner-radius);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+
+    text-shadow: var(--shadow);
+  }
+
+  .time-row {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .date-row {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.1;
+    opacity: .95;
+  }
+
+  .weather-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  .weather-icon {
+    font-size: 18px;
+  }
+
+  .weather-source {
+    font-size: 8px;
+    font-weight: 400;
+    opacity: .65;
+    margin-left: 2px;
+  }
+
+  #error {
+    display: none;
+    font-size: 12px;
+  }
+</style>
+</head>
+
+<body>
+<div class="overlay">
+  <div class="time-row">
+    <span id="time">--:--</span>
+    <span id="zone">AEST</span>
+  </div>
+
+  <div class="date-row" id="date">--/--/----</div>
+
+</div>
+
+<script>
+/* =========================================================
+   EDIT THESE SETTINGS
+   ========================================================= */
+
+const CONFIG = {
+  // Name displayed beside the weather:
+  locationName: "Launceston",
+
+  // Coordinates for the weather location:
+  // Launceston, Tasmania
+  latitude: -41.4332,
+  longitude: 147.1441,
+
+  // IANA timezone. Australia/Hobart automatically handles
+  // Australian daylight saving time.
+  timezone: "Australia/Hobart",
+
+  // Automatically show AEST/AEDT based on the timezone offset.
+  // Set to a string such as "AEST" if you want to force a label.
+  forceTimezoneLabel: null,
+
+  // 24-hour clock:
+  use24Hour: false,
+
+  // Weather refresh interval:
+  weatherRefreshMinutes: 10
+};
+
+/* =========================================================
+   CLOCK
+   ========================================================= */
+
+function getTimezoneLabel() {
+  if (CONFIG.forceTimezoneLabel) return CONFIG.forceTimezoneLabel;
+
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: CONFIG.timezone,
+    timeZoneName: "longOffset"
+  }).formatToParts(new Date());
+
+  const offset = parts.find(p => p.type === "timeZoneName")?.value || "";
+
+  // Australia/Hobart:
+  // GMT+10:00 = AEST
+  // GMT+11:00 = AEDT
+  if (offset.includes("+11")) return "AEDT";
+  if (offset.includes("+10")) return "AEST";
+
+  // Generic fallback for other locations.
+  return offset.replace("GMT", "UTC") || "LOCAL";
+}
+
+function updateClock() {
+  const now = new Date();
+
+  const timeOptions = {
+    timeZone: CONFIG.timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: !CONFIG.use24Hour
+  };
+
+  const dateOptions = {
+    timeZone: CONFIG.timezone,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  };
+
+  document.getElementById("time").textContent =
+    new Intl.DateTimeFormat("en-AU", timeOptions).format(now);
+
+  document.getElementById("date").textContent =
+    new Intl.DateTimeFormat("en-AU", dateOptions).format(now);
+
+  document.getElementById("zone").textContent =
+    getTimezoneLabel();
+}
+
+updateClock();
+setInterval(updateClock, 250);
+
+</script>
+</body>
+</html>
